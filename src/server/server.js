@@ -9,7 +9,7 @@ let config = Config['localhost'];
 let web3 = new Web3(config.url.replace('http', 'ws'));
 web3.eth.defaultAccount = web3.eth.accounts[0];
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
-let flightSuretyDat a = new web3.eth.Contract(FlightSuretyData.abi, config.dataAddress);
+let flightSuretyData = new web3.eth.Contract(FlightSuretyData.abi, config.dataAddress);
 
 var oracles = [];
 
