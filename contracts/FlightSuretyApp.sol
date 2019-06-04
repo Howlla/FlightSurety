@@ -19,7 +19,7 @@ contract FlightSuretyApp {
     /********************************************************************************************/
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
-    uint8 private constant CREDIT_RATE = 150;
+    uint8 private constant CREDIT_RATE = 15;
 
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -228,7 +228,7 @@ contract FlightSuretyApp {
         //     address[] memory passengersInvolved =  flightSuretyData.getPassengersEnsured(flightKey);
         //     for(uint i=0; i < passengersInvolved.length; i++)
         //     {
-        //         flightSuretyData.creditInsurees(airline,flight,timestamp,passengersInvolved[i],CREDIT_RATE);
+        //             claimInsuranceAmount(airline,flight,timestamp,passengersInvolved[i]);
                 
         //     }
         // }   
@@ -239,7 +239,16 @@ contract FlightSuretyApp {
      */
     function claimInsuranceAmount(address airline, string flight, uint256 timestamp, address passenger) external {
         require(isOperational(), "Service is not available");
-        flightSuretyData.creditInsurees(airline, flight, timestamp, passenger,CREDIT_RATE);
+         if(flights[flight].statusCode == STATUS_CODE_LATE_AIRLINE)
+        {
+            bytes32 flightKey = getFlightKey(airline,flight,timestamp);
+            address[] memory passengersInvolved =  flightSuretyData.getPassengersEnsured(flightKey);
+            for(uint i=0; i < passengersInvolved.length; i++)
+            {
+        flightSuretyData.creditInsurees(airline, flight, timestamp, passengersInvolved[i],CREDIT_RATE);
+                
+            }
+        }   
     }
 
     /**

@@ -252,7 +252,7 @@ contract FlightSuretyData {
         bytes32 flightKey = getFlightKey(_airline, _flight, _timestamp);
         bytes32 insuranceId = keccak256(abi.encodePacked(flightKey, _passenger));
         require(insuranceDetails[insuranceId].id==insuranceId,"No such insurance Exists");
-        require(insuranceDetails[insuranceId].isPaid==false,"Already claimed this amount");
+        // require(insuranceDetails[insuranceId].isPaid==false,"Already claimed this amount");
         uint256 currentAirlineBalance = walletBalance[_airline];
         uint256 amountCreditedToPassenger = insuranceDetails[insuranceId].amount.mul(creditRate).div(10);
         require(currentAirlineBalance >= amountCreditedToPassenger, "Airline Doesn't have enough funds. Please check later.");
