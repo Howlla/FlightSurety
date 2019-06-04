@@ -242,8 +242,9 @@ contract FlightSuretyData {
                                     address _airline,
                                     string _flight,
                                     uint256 _timestamp,
-                                    address _airlineAddress,
-                                    address _passenger
+                                    address _passenger,
+                                    uint8 creditRate
+
                                 )
                                 external
                                 requireIsOperational
@@ -252,11 +253,11 @@ contract FlightSuretyData {
         bytes32 insuranceId = keccak256(abi.encodePacked(flightKey, _passenger));
         require(insuranceDetails[insuranceId].id==insuranceId,"No such insurance Exists");
         require(insuranceDetails[insuranceId].isPaid==false,"Already claimed this amount");
-        uint256 currentAirlineBalance = walletBalance[_airlineAddress];
-        uint256 amountCreditedToPassenger = insuranceDetails[insuranceId].amount.mul(15).div(10);
+        uint256 currentAirlineBalance = walletBalance[_airline];
+        uint256 amountCreditedToPassenger = insuranceDetails[insuranceId].amount.mul(creditRate).div(10);
         require(currentAirlineBalance >= amountCreditedToPassenger, "Airline Doesn't have enough funds. Please check later.");
         insuranceDetails[insuranceId].isPaid = true;
-        walletBalance[_airlineAddress] = currentAirlineBalance.sub(amountCreditedToPassenger);
+        walletBalance[_airline] = currentAirlineBalance.sub(amountCreditedToPassenger);
         walletBalance[_passenger] = walletBalance[_passenger].add(amountCreditedToPassenger);
         emit insuranceClaimed(_airline,_flight,_timestamp,_passenger,amountCreditedToPassenger,insuranceId);
 
@@ -317,6 +318,9 @@ contract FlightSuretyData {
      */
     function isAirlineActivated(address airlineAddress) external view requireIsOperational returns(bool) {
         return isActiveAirline[airlineAddress];
+    }
+    function getPassengersEnsured(bytes32 key) external view returns (address[]){
+        return passengersEnsured[key];
     }
      /**
     * @dev Fallback function for funding smart contract.

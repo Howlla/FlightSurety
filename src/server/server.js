@@ -18,6 +18,15 @@ var oracles = [];
   
   let accounts = await web3.eth.getAccounts();
   
+<<<<<<< HEAD
+  // try{
+    
+  //   await flightSuretyData.methods.authorizeCaller(config.appAddress).send({from:accounts[0]});
+  //   console.log("HELLO SERVER");
+  // }catch(err){
+  //   console.log(err);
+  // }
+=======
   try{
     
     await flightSuretyData.methods.authorizeCaller(config.appAddress).send({from:accounts[0]});
@@ -25,6 +34,7 @@ var oracles = [];
   }catch(err){
     console.log(err);
   }
+>>>>>>> 7aa1e43504e90748d4906cd982aa7d4f3edbdc1a
 
   let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call()
   for(let i = 19; i<= 39 ; i++){
