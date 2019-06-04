@@ -19,6 +19,8 @@ contract FlightSuretyApp {
     /********************************************************************************************/
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
+    uint8 private constant CREDIT_RATE = 150;
+
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
@@ -35,7 +37,7 @@ contract FlightSuretyApp {
         uint256 updatedTimestamp;        
         address airline;
     }
-    mapping(bytes32 => Flight) private flights;
+    mapping(string => Flight) private flights;
     //Seperate DATA & APP Contranct
     FlightSuretyData flightSuretyData;
 
@@ -107,7 +109,8 @@ contract FlightSuretyApp {
    /**
     * @dev Add an airline to the registration queue
     *
-    */   
+    */  
+     
     function registerAirline
                             (  
                             address _newAirline
@@ -118,24 +121,23 @@ contract FlightSuretyApp {
     {   
         require(flightSuretyData.isAirlineActivated(msg.sender), "Only Active airlines may register others");
         require(!flightSuretyData.isAirlineRegistered(_newAirline),"This airline is already registered");
-        require(!flightSuretyData.isAirlineVoted(_newAirline, msg.sender), "You have already voted for this airline");
+        // require(!flightSuretyData.isAirlineVoted(_newAirline, msg.sender), "You have already voted for this airline");
         flightSuretyData.addAirlineVotes(_newAirline, msg.sender);
         address[] memory registeredAirlines = flightSuretyData.getRegisteredAirlines();
         address[] memory votedAirlines = flightSuretyData.getAirlineVotes(_newAirline);
-        if(registeredAirlines.length <= requiredVotesConstant){
-            flightSuretyData.registerAirline(_newAirline);
-            success = true;
-        }else{
-            if(votedAirlines.length>=registeredAirlines.length/2){ //More than 50% of registered airlines have to approve
+        if(registeredAirlines.length >= requiredVotesConstant) {
+            if(votedAirlines.length >= registeredAirlines.length / 2) {
                 flightSuretyData.registerAirline(_newAirline);
                 success = true;
-            }
-            else{
+            } else {
                 success = false;
-            } 
+            }
+        } else {
+            flightSuretyData.registerAirline(_newAirline);
+            success = true;
         }
-
         return (success, votedAirlines.length);
+   
     }
 
     /**
@@ -151,14 +153,23 @@ contract FlightSuretyApp {
     *HARDCODED INTO DAPP FOR NOW
     *
     */  
-    // function registerFlight
-    //                             (
-    //                             )
-    //                             external
-    //                             pure
-    // {
-
-    // }
+    function registerFlight
+                                (
+                                     
+                                string name,
+                                uint256 timestamp
+                                )
+                                external
+                                
+    {
+            flights[name] = Flight({
+            isRegistered: true,
+            statusCode: STATUS_CODE_ON_TIME,
+            updatedTimestamp:timestamp,
+            airline: msg.sender
+                 
+            }); 
+    }
 
 
     /**
@@ -167,9 +178,8 @@ contract FlightSuretyApp {
     */
     function activateAirline(address _airlineAddress) external payable {
         require(isOperational(), "Service is not available");
-        require(flightSuretyData.isAirlineRegistered(_airlineAddress), "This airline is not registered");
         require(!flightSuretyData.isAirlineActivated(_airlineAddress), "This airline is already activated");
-        require(msg.value == 10 ether, "Please submit 10 ether to activate your airline");
+        require(msg.value >= 10 ether, "Please submit 10 ether to activate your airline");
         flightSuretyData.activateAirline.value(msg.value)(_airlineAddress);
     }
     
@@ -196,17 +206,32 @@ contract FlightSuretyApp {
    /**
     * @dev Called after oracle has updated flight status
     *
+    PLEASE CHECK THIS 
     */  
     function processFlightStatus
                                 (
                                     address airline,
-                                    string memory flight,
+                                    string  flight,
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-                                internal
-                                pure
+                                public
     {
+        require(flights[flight].statusCode != statusCode);
+
+        flights[flight].statusCode = statusCode;
+        emit FlightStatusChange(flight, statusCode);
+        
+        // if(statusCode == STATUS_CODE_LATE_AIRLINE)
+        // {
+        //     bytes32 flightKey = getFlightKey(airline,flight,timestamp);
+        //     address[] memory passengersInvolved =  flightSuretyData.getPassengersEnsured(flightKey);
+        //     for(uint i=0; i < passengersInvolved.length; i++)
+        //     {
+        //         flightSuretyData.creditInsurees(airline,flight,timestamp,passengersInvolved[i],CREDIT_RATE);
+                
+        //     }
+        // }   
     }
     /**
      * @dev Claim the insurance amount for a flight
@@ -214,7 +239,7 @@ contract FlightSuretyApp {
      */
     function claimInsuranceAmount(address airline, string flight, uint256 timestamp, address passenger) external {
         require(isOperational(), "Service is not available");
-        flightSuretyData.creditInsurees(airline, flight, timestamp, airline, passenger);
+        flightSuretyData.creditInsurees(airline, flight, timestamp, passenger,CREDIT_RATE);
     }
 
     /**
@@ -294,6 +319,7 @@ contract FlightSuretyApp {
     // they fetch data and submit a response
     event OracleRequest(uint8 index, address airline, string flight, uint256 timestamp);
 
+    event FlightStatusChange(string flightCode, uint8 status);
 
     // Register an oracle with the contract
     function registerOracle
